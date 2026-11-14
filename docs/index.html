@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PFTL Governance Audit Framework — Results</title>
+<style>
+body { font-family: system-ui, sans-serif; max-width: 960px; margin: 2em auto; padding: 0 1em; color: #1a1a1a; }
+h1, h2 { color: #0b3d66; }
+table { border-collapse: collapse; width: 100%; margin: 1em 0; }
+th, td { border: 1px solid #bbb; padding: 6px 8px; text-align: left; vertical-align: top; }
+th { background: #e8f0f7; }
+pre { background: #f4f4f4; padding: 1em; overflow-x: auto; font-size: 0.85em; }
+.pass { color: #0a7a0a; font-weight: bold; }
+.fail { color: #b00000; font-weight: bold; }
+code { background: #f0f0f0; padding: 0 3px; }
+</style>
+</head>
+<body>
+<h1>PFTL Governance Audit Framework — Results</h1>
+<p>Read-only audit harness for PFTL governance rules, run against synthetic
+local fixtures. The harness never touches the network and never mutates the
+pinned postfiatd tree. Vote replay and reordered validations are out of
+scope for this pack.</p>
+<h2>Pinned sources</h2>
+<ul>
+<li>Pinned postfiatd commit: <code>0085a1ff885d6a446369cf73a4430f75af22be55</code></li>
+<li>Upstream comparison: rippled 2.5.0, commit <code>1e01cd34f7a216092ed779f291b43324c167167a</code></li>
+</ul>
+<h2>Summary</h2>
+<p>Total checks: <strong>101 passed, 0 failed</strong> —
+<span class="pass">ALL CHECKS PASSED</span></p>
+<table>
+<tr><th>Check group</th><th>Passed</th><th>Failed</th></tr>
+<tr><td>AMENDMENT-THRESHOLD</td><td>35</td><td>0</td></tr><tr><td>FEE-SEQUENCE</td><td>29</td><td>0</td></tr><tr><td>TAMPERED-INPUT</td><td>8</td><td>0</td></tr><tr><td>VALIDATOR-LIST</td><td>29</td><td>0</td></tr>
+</table>
+<p>Digest verification: <strong>PASS</strong> (19 files checked, see below).</p>
+<h2>Environment</h2>
+<pre>os: Linux 7.0.0-44-generic x86_64
+python3: Python 3.12.3
+bash: GNU bash, version 5.2.21(1)-release (x86_64-pc-linux-gnu)
+sha256sum: sha256sum (GNU coreutils) 9.4
+pinned_postfiatd_commit: 0085a1ff885d6a446369cf73a4430f75af22be55
+upstream_rippled_2.5.0_commit: 1e01cd34f7a216092ed779f291b43324c167167a</pre>
+<h2>Measured claims (backed by a runnable check and raw output)</h2>
+<table>
+<tr><th>ID</th><th>Claim</th><th>Evidence</th></tr>
+<tr><td>M-01</td><td>Under the pinned post-fix 67% rule, the minimum yes-vote count for an amendment majority with 16 trusted validators is 11 (threshold 10, strict &gt;).</td><td>check_amendment_threshold.py, cases AMEND-T-01..T-05 (16 validators, 10 votes no majority, 11 votes majority). Raw output: results/run_log.txt.</td></tr>
+<tr><td>M-02</td><td>Under the pinned post-fix 67% rule, the minimum majority is 7 of 10 and 8 of 11 trusted validators.</td><td>check_amendment_threshold.py, cases AMEND-T-06..T-10. Raw output: results/run_log.txt.</td></tr>
+<tr><td>M-03</td><td>Under the pre-fix 204/256 rule, the minimum majority is 12 of 16 and 7 of 10 (votes &gt;= threshold).</td><td>check_amendment_threshold.py, cases AMEND-T-14..T-17. Raw output: results/run_log.txt.</td></tr>
+<tr><td>M-04</td><td>Under upstream rippled 2.5.0 80/100, 11 of 16 and 12 of 16 are NOT majorities; the minimum is 13 of 16. The pinned 67% rule therefore enables an amendment at 11/16 where upstream requires 13/16.</td><td>check_amendment_threshold.py, cases AMEND-U-01..U-05. Raw output: results/run_log.txt.</td></tr>
+<tr><td>M-05</td><td>An amendment enables only once majority_time + 2 weeks &lt;= close_time; one second earlier it only holds.</td><td>check_amendment_threshold.py, cases AMEND-H-01..H-05. Raw output: results/run_log.txt.</td></tr>
+<tr><td>M-06</td><td>A validator&#x27;s recorded amendment vote expires 24 hours after its last validation; at exactly 24h it is still live, one second later it is cleared.</td><td>check_amendment_threshold.py, cases AMEND-E-01..E-05. Raw output: results/run_log.txt.</td></tr>
+<tr><td>M-07</td><td>A vetoed amendment never enables, even with unanimous validator support and the hold time elapsed.</td><td>check_amendment_threshold.py, cases AMEND-V-01..V-02. Raw output: results/run_log.txt.</td></tr>
+<tr><td>M-08</td><td>An unknown amendment (not in the known set) is never voted.</td><td>check_amendment_threshold.py, case AMEND-K-01. Raw output: results/run_log.txt.</td></tr>
+<tr><td>M-09</td><td>Publisher list threshold is 1 for fewer than 3 publishers, otherwise publishers/2 + 1 (3-&gt;2, 4-&gt;3, 5-&gt;3, 10-&gt;6).</td><td>check_validator_list.py, cases VAL-L-01..L-08. Raw output: results/run_log.txt.</td></tr>
+<tr><td>M-10</td><td>Validator quorum under the pinned 67% rule is 11 of 16, 7 of 10, 24 of 35, 67 of 100; upstream 80% gives 13, 8, 28, 80. The 60% floor dominates when the effective UNL is much smaller than the UNL (20/15 -&gt; 12 both).</td><td>check_validator_list.py, cases VAL-Q-01..Q-05 (pinned and upstream evaluated side by side). Raw output: results/run_log.txt.</td></tr>
+<tr><td>M-11</td><td>A validator is trusted only when listed on at least listThreshold_ publisher lists and its manifest is not revoked.</td><td>check_validator_list.py, cases VAL-T-01..T-05. Raw output: results/run_log.txt.</td></tr>
+<tr><td>M-12</td><td>A publisher list whose signature does not match its blob is rejected; a matching signature is accepted.</td><td>check_validator_list.py, cases VAL-S-01..S-03 (synthetic sha256 stand-in signature). Raw output: results/run_log.txt.</td></tr>
+<tr><td>M-13</td><td>A publisher list with a regressed sequence is stale, an equal sequence is already known, and a higher sequence is new and applied.</td><td>check_validator_list.py, cases VAL-QQ-01..QQ-03. Raw output: results/run_log.txt.</td></tr>
+<tr><td>M-14</td><td>The default account reserve is 10 XRP with 0 owned items, 16 XRP with 3, 20 XRP with 5 (10 XRP base + 2 XRP per owned item).</td><td>check_fee_sequence.py, cases FEE-R-01..R-03. Raw output: results/run_log.txt.</td></tr>
+<tr><td>M-15</td><td>On an open ledger, a fee below the fee due is rejected with telINSUF_FEE_P; a fee equal to or above the due fee is accepted; fee sufficiency is not checked on a closed ledger.</td><td>check_fee_sequence.py, cases FEE-C-01..C-06. Raw output: results/run_log.txt.</td></tr>
+<tr><td>M-16</td><td>A malformed fee (negative, or non-native currency) is rejected with temBAD_FEE.</td><td>check_fee_sequence.py, cases FEE-C-07..C-08. Raw output: results/run_log.txt.</td></tr>
+<tr><td>M-17</td><td>Fee-load scaling is fee * factor / 256 with integer division: 10 drops at factor 256 stays 10, at 512 becomes 20, at 320 becomes 12.</td><td>check_fee_sequence.py, cases FEE-S-01..S-06. Raw output: results/run_log.txt.</td></tr>
+<tr><td>M-18</td><td>A transaction sequence equal to the account sequence is accepted; a future sequence returns terPRE_SEQ; a past sequence returns tefPAST_SEQ; a missing source account returns terNO_ACCOUNT.</td><td>check_fee_sequence.py, cases SEQ-01..SEQ-06. Raw output: results/run_log.txt.</td></tr>
+<tr><td>M-19</td><td>Fee escalation constants: minimum escalation multiplier is baseLevel * 500 (256 -&gt; 128000); minimum 32 transactions per ledger before escalation (1000 standalone); target 256; a replacement transaction for the same sequence must pay at least 1.25x (512 -&gt; 640).</td><td>check_fee_sequence.py, cases FEE-E-01..E-06. Raw output: results/run_log.txt.</td></tr>
+<tr><td>M-20</td><td>Tampered inputs are detected: a fixture claiming the pinned threshold is 80/100 is flagged; a forged validator-list signature is rejected; a 5-drop fee against a 10-drop due fee is rejected; a sequence gap is held and a replay fails; a regressed list sequence is stale; a vote count above the trusted validator set is invalid.</td><td>check_tampered.py, cases TAMP-01..TAMP-07. Raw output: results/run_log.txt.</td></tr>
+<tr><td>M-21</td><td>A fixture file with one byte changed fails sha256sum --check against the recorded digest (tamper detected by the digest check itself).</td><td>check_tampered.py, case TAMP-08 (real sha256sum --check run on a tampered copy in a temp directory). Raw output: results/run_log.txt.</td></tr>
+<tr><td>M-22</td><td>The full harness reproduces from a fresh copy with exit status 0 and all digest checks passing.</td><td>results/reproduction_log.txt (fresh-copy run of bash run_all.sh).</td></tr>
+</table>
+<h2>Source-derived claims (backed by an exact file:line citation)</h2>
+<table>
+<tr><th>ID</th><th>Claim</th><th>Evidence</th></tr>
+<tr><td>S-01</td><td>The pinned post-fix amendment majority threshold constant is 67/100.</td><td>include/xrpl/protocol/SystemParameters.h:85 (constexpr std::ratio&lt;67, 100&gt; postFixAmendmentMajorityCalcThreshold).</td></tr>
+<tr><td>S-02</td><td>Upstream rippled 2.5.0 uses 80/100 for the same constant.</td><td>Upstream commit 1e01cd34f7a216092ed779f291b43324c167167a, include/xrpl/protocol/SystemParameters.h:83 (constexpr std::ratio&lt;80, 100&gt; postFixAmendmentMajorityCalcThreshold), read via git show.</td></tr>
+<tr><td>S-03</td><td>The pinned AmendmentTable implementation is byte-identical to upstream rippled 2.5.0; the threshold divergence lives only in the SystemParameters.h constant.</td><td>diff of src/xrpld/app/misc/detail/AmendmentTable.cpp against upstream 2.5.0: empty (identical).</td></tr>
+<tr><td>S-04</td><td>doVoting records tfGotMajority when validators have a majority and the ledger does not, tfLostMajority when the ledger has one and validators do not, and enables (action 0) only when the ledger majority has held for majorityTime_ and the local vote is up; otherwise it holds.</td><td>src/xrpld/app/misc/detail/AmendmentTable.cpp:847-935 (doVoting), lines 902-923.</td></tr>
+<tr><td>S-05</td><td>recordVotes ignores validations from untrusted validators and clears a validator&#x27;s recorded votes 24 hours after its last validation.</td><td>src/xrpld/app/misc/detail/AmendmentTable.cpp:153-263, expiresAfter = 24h at line 172, untrusted ignored at lines 214-220, expiry cleared at lines 240-250.</td></tr>
+<tr><td>S-06</td><td>doValidation returns only supported, up-voted, not-yet-enabled amendments, sorted by amendment ID.</td><td>src/xrpld/app/misc/detail/AmendmentTable.cpp:817-840.</td></tr>
+<tr><td>S-07</td><td>The fixAmendmentMajorityCalc feature gates the post-fix (strict &gt;) threshold comparison.</td><td>include/xrpl/protocol/detail/features.macro:104; src/xrpld/app/misc/detail/AmendmentTable.cpp:326-377.</td></tr>
+<tr><td>S-08</td><td>The pinned validator quorum is 67% (max of ceil(effectiveUnlSize * 0.67) and ceil(unlSize * 0.6)); upstream rippled 2.5.0 uses 80%. The pinned source comments that 67% is for devnet/testnet and mainnet should revert to 80%.</td><td>src/xrpld/app/misc/detail/ValidatorList.cpp:1898-1900 (comment) and 1934 (formula); upstream ValidatorList.cpp:1872 and return formula with 0.8f.</td></tr>
+<tr><td>S-09</td><td>The publisher list threshold defaults to 1 for fewer than 3 publishers, otherwise publishers/2 + 1, unless overridden in configuration.</td><td>src/xrpld/app/misc/detail/ValidatorList.cpp:197-215.</td></tr>
+<tr><td>S-10</td><td>updateTrusted adds a validator to the trusted set only when it is listed on at least listThreshold_ publisher lists and its manifest is not revoked, and removes it otherwise.</td><td>src/xrpld/app/misc/detail/ValidatorList.cpp:2036-2066.</td></tr>
+<tr><td>S-11</td><td>A publisher list is applied only after its manifest deserializes and its signature verifies against the publisher key; a revoked publisher manifest is rejected at load time.</td><td>src/xrpld/app/misc/detail/ValidatorList.cpp:1158-1183 (applyList), 1413-1443 (verify), 178-181 (revoked publisher rejected at load).</td></tr>
+<tr><td>S-12</td><td>A publisher list whose sequence is below the current sequence is stale, equal is already known, and above the maximum is new.</td><td>src/xrpld/app/misc/detail/ValidatorList.cpp:1427-1443.</td></tr>
+<tr><td>S-13</td><td>The default fee schedule is a 10-drop reference fee, a 10 XRP account reserve, and a 2 XRP per-owned-item reserve increment.</td><td>src/xrpld/core/Config.h:66-77 (struct FeeSetup, default-constructed values).</td></tr>
+<tr><td>S-14</td><td>A malformed transaction fee (non-native, negative, or illegal amount) is rejected in preflight with temBAD_FEE.</td><td>src/xrpld/app/tx/detail/Transactor.cpp:214-218.</td></tr>
+<tr><td>S-15</td><td>checkFee compares the fee paid against the load-scaled minimum fee only when the ledger is open, and returns telINSUF_FEE_P when the fee paid is below the fee due.</td><td>src/xrpld/app/tx/detail/Transactor.cpp:379-413.</td></tr>
+<tr><td>S-16</td><td>checkSeqProxy returns terNO_ACCOUNT for a missing source account, terPRE_SEQ for a future sequence, tefPAST_SEQ for a past sequence, and success when the sequences match.</td><td>src/xrpld/app/tx/detail/Transactor.cpp:480-550.</td></tr>
+<tr><td>S-17</td><td>scaleFeeLoad computes fee * feeFactor / loadBase with integer division; the normal load base is 256 and the maximum fee is 256 * 1,000,000.</td><td>src/xrpld/app/misc/detail/LoadFeeTrack.cpp:84-110; src/xrpld/app/misc/LoadFeeTrack.h:141-147.</td></tr>
+<tr><td>S-18</td><td>Fee escalation parameters: minimum escalation multiplier baseLevel * 500, minimum 32 transactions per ledger before escalation (1000 standalone), target 256 transactions per ledger, replacement transactions pay at least 25% more for the same sequence.</td><td>src/xrpld/app/misc/TxQ.h:98-113.</td></tr>
+<tr><td>S-19</td><td>The pinned ValidatorList implementation differs from upstream rippled 2.5.0 (69 diff lines): manifest promotion to trusted on listing, uncapped manifest rate-limit policy, deserialized-manifest applyList path, and the 67% quorum.</td><td>diff of src/xrpld/app/misc/detail/ValidatorList.cpp against upstream 2.5.0.</td></tr>
+<tr><td>S-20</td><td>Ledger fee settings are per-ledger values (base reference cost, reserve base, reserve increment); the account reserve for a given owner count is reserve + ownerCount * increment.</td><td>include/xrpl/protocol/Fees.h:32-57 (struct Fees, accountReserve).</td></tr>
+</table>
+<h2>Run log (last 40 lines, unedited)</h2>
+<pre>PASS [FEE-C-01] fee paid equals fee due on open ledger: accepted (got &#x27;ok&#x27;, expected &#x27;ok&#x27;)
+PASS [FEE-C-02] fee paid below fee due on open ledger: insufficient fee (got &#x27;telINSUF_FEE_P&#x27;, expected &#x27;telINSUF_FEE_P&#x27;)
+PASS [FEE-C-03] fee paid above fee due on open ledger: accepted (got &#x27;ok&#x27;, expected &#x27;ok&#x27;)
+PASS [FEE-C-04] zero fee on open ledger with fee due: insufficient fee (got &#x27;telINSUF_FEE_P&#x27;, expected &#x27;telINSUF_FEE_P&#x27;)
+PASS [FEE-C-05] fee sufficiency is only checked when the ledger is open (got &#x27;ok&#x27;, expected &#x27;ok&#x27;)
+PASS [FEE-C-06] closed ledger: fee sufficiency not checked (got &#x27;ok&#x27;, expected &#x27;ok&#x27;)
+PASS [FEE-C-07] negative fee is malformed (got &#x27;temBAD_FEE&#x27;, expected &#x27;temBAD_FEE&#x27;)
+PASS [FEE-C-08] non-native fee currency is malformed (got &#x27;temBAD_FEE&#x27;, expected &#x27;temBAD_FEE&#x27;)
+PASS [FEE-S-01] normal load (factor 256): fee unchanged (got 10, expected 10)
+PASS [FEE-S-02] 2x load: fee doubles (got 20, expected 20)
+PASS [FEE-S-03] fee * 320 / 256 = 12.5, integer division floors to 12 (got 12, expected 12)
+PASS [FEE-S-04] zero fee stays zero under load scaling (got 0, expected 0)
+PASS [FEE-S-05] 10000 drops at normal load unchanged (got 10000, expected 10000)
+PASS [FEE-S-06] 4x load: 10000 * 1024 / 256 = 40000 (got 40000, expected 40000)
+PASS [SEQ-01] tx sequence equals account sequence: accepted (got &#x27;ok&#x27;, expected &#x27;ok&#x27;)
+PASS [SEQ-02] tx sequence ahead of account sequence (gap): retryable, not applied (got &#x27;terPRE_SEQ&#x27;, expected &#x27;terPRE_SEQ&#x27;)
+PASS [SEQ-03] tx sequence behind account sequence (replay): failed, fee claimed (got &#x27;tefPAST_SEQ&#x27;, expected &#x27;tefPAST_SEQ&#x27;)
+PASS [SEQ-04] tx sequence 2 ahead (gap of 2): retryable (got &#x27;terPRE_SEQ&#x27;, expected &#x27;terPRE_SEQ&#x27;)
+PASS [SEQ-05] source account does not exist: retryable (got &#x27;terNO_ACCOUNT&#x27;, expected &#x27;terNO_ACCOUNT&#x27;)
+PASS [SEQ-06] first transaction of a new account (sequence 1): accepted (got &#x27;ok&#x27;, expected &#x27;ok&#x27;)
+PASS [FEE-E-01] minimum escalation multiplier = baseLevel * 500 (got 128000, expected 128000)
+PASS [FEE-E-02] minimum transactions allowed into a ledger before escalation (got 32, expected 32)
+PASS [FEE-E-03] transactions per ledger that fee escalation works towards (got 256, expected 256)
+PASS [FEE-E-04] minimum transactions per ledger in standalone mode (got 1000, expected 1000)
+PASS [FEE-E-05] replacement transaction for the same sequence must pay at least 1.25x the queued fee level (got 25, expected 25)
+PASS [FEE-E-06] replacement for fee level 512 must be at least 512 * 1.25 = 640 (got 640, expected 640)
+FEE-SEQUENCE: 29 passed, 0 failed
+
+=== check_tampered ===
+PASS [TAMP-01] a fixture claiming the pinned post-fix threshold is 80/100 must be flagged: pinned value is 67/100 (detected=&#x27;detected&#x27;, expected=&#x27;detected&#x27;)
+PASS [TAMP-02] validator-list entry whose signature does not match its blob must be rejected (detected=&#x27;rejected&#x27;, expected=&#x27;rejected&#x27;)
+PASS [TAMP-03] fee of 5 drops against a 10-drop due fee must be rejected as insufficient (detected=&#x27;telINSUF_FEE_P&#x27;, expected=&#x27;telINSUF_FEE_P&#x27;)
+PASS [TAMP-04] transaction sequence 2 ahead of the account sequence (gap) must be held, not applied (detected=&#x27;terPRE_SEQ&#x27;, expected=&#x27;terPRE_SEQ&#x27;)
+PASS [TAMP-05] replayed transaction (sequence already used) must fail with tefPAST_SEQ (detected=&#x27;tefPAST_SEQ&#x27;, expected=&#x27;tefPAST_SEQ&#x27;)
+PASS [TAMP-06] validator list with a regressed sequence must be treated as stale, not applied (detected=&#x27;stale&#x27;, expected=&#x27;stale&#x27;)
+PASS [TAMP-07] an amendment vote count larger than the trusted validator set is impossible input and must be rejected (detected=&#x27;invalid&#x27;, expected=&#x27;invalid&#x27;)
+PASS [TAMP-08] a fixture file with one byte changed must fail sha256sum --check against the recorded digest (detected=&#x27;detected&#x27;, expected=&#x27;detected&#x27;)
+TAMPERED-INPUT: 8 passed, 0 failed
+
+OVERALL RESULT: 101 passed, 0 failed</pre>
+<p>Full unedited log: <code>results/run_log.txt</code></p>
+<h2>Digest verification output (unedited)</h2>
+<pre>./PINNED_COMMIT: OK
+./README.md: OK
+./SOURCES.md: OK
+./claim-evidence-index.md: OK
+./claims.json: OK
+./docs/index.html: OK
+./fixtures/README.md: OK
+./fixtures/amendments.json: OK
+./fixtures/ledger_fees.json: OK
+./fixtures/tampered.json: OK
+./fixtures/validator_lists.json: OK
+./results/env.txt: OK
+./results/run_log.txt: OK
+./run_all.sh: OK
+./scripts/build_derived.py: OK
+./scripts/check_amendment_threshold.py: OK
+./scripts/check_fee_sequence.py: OK
+./scripts/check_tampered.py: OK
+./scripts/check_validator_list.py: OK</pre>
+<h2>Reproduction</h2>
+<p>From a fresh copy of this pack, run <code>bash run_all.sh</code>. The exact
+commands, exit status, and any limitations are recorded in
+<code>results/reproduction_log.txt</code>.</p>
+<h2>Limitations</h2>
+<ul>
+<li>Fixtures are synthetic JSON built from the real schema shapes; the
+harness checks the rules as transcribed from the cited source lines, it
+does not compile or execute postfiatd (a full build is not feasible on
+this machine).</li>
+<li>Publisher-list signatures in the fixtures are synthetic
+sha256 stand-ins that exercise the verify-then-apply rule, not real
+ed25519 signatures.</li>
+<li>Upstream comparison covers AmendmentTable.cpp, ValidatorList.cpp, and
+SystemParameters.h. The upstream sparse checkout used here does not
+contain src/xrpld/app/tx or the xrpl include tree, so no upstream diff is
+claimed for the fee/sequence code.</li>
+</ul>
+</body>
+</html>
