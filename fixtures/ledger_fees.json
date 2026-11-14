@@ -1,0 +1,228 @@
+{
+  "meta": {
+    "note": "SYNTHETIC fixtures. Rules transcribed from src/xrpld/core/Config.h (FeeSetup), src/xrpld/app/tx/detail/Transactor.cpp (preflight/checkFee/checkSeqProxy), src/xrpld/app/misc/detail/LoadFeeTrack.cpp (scaleFeeLoad), src/xrpld/app/misc/TxQ.h (escalation constants). Accounts, sequences and fees are invented. 1 XRP = 1,000,000 drops.",
+    "reference_fee_drops": 10,
+    "account_reserve_drops": 10000000,
+    "owner_reserve_drops": 2000000,
+    "load_base": 256
+  },
+  "reserve_cases": [
+    {
+      "id": "FEE-R-01",
+      "owner_count": 0,
+      "expected_drops": 10000000,
+      "rule": "reserve = 10 XRP + 0 * 2 XRP"
+    },
+    {
+      "id": "FEE-R-02",
+      "owner_count": 3,
+      "expected_drops": 16000000,
+      "rule": "reserve = 10 XRP + 3 * 2 XRP = 16 XRP"
+    },
+    {
+      "id": "FEE-R-03",
+      "owner_count": 5,
+      "expected_drops": 20000000,
+      "rule": "reserve = 10 XRP + 5 * 2 XRP = 20 XRP"
+    }
+  ],
+  "check_fee_cases": [
+    {
+      "id": "FEE-C-01",
+      "fee_paid_drops": 10,
+      "fee_due_drops": 10,
+      "ledger_open": true,
+      "expected": "ok",
+      "rule": "fee paid equals fee due on open ledger: accepted"
+    },
+    {
+      "id": "FEE-C-02",
+      "fee_paid_drops": 9,
+      "fee_due_drops": 10,
+      "ledger_open": true,
+      "expected": "telINSUF_FEE_P",
+      "rule": "fee paid below fee due on open ledger: insufficient fee"
+    },
+    {
+      "id": "FEE-C-03",
+      "fee_paid_drops": 11,
+      "fee_due_drops": 10,
+      "ledger_open": true,
+      "expected": "ok",
+      "rule": "fee paid above fee due on open ledger: accepted"
+    },
+    {
+      "id": "FEE-C-04",
+      "fee_paid_drops": 0,
+      "fee_due_drops": 10,
+      "ledger_open": true,
+      "expected": "telINSUF_FEE_P",
+      "rule": "zero fee on open ledger with fee due: insufficient fee"
+    },
+    {
+      "id": "FEE-C-05",
+      "fee_paid_drops": 0,
+      "fee_due_drops": 10,
+      "ledger_open": false,
+      "expected": "ok",
+      "rule": "fee sufficiency is only checked when the ledger is open"
+    },
+    {
+      "id": "FEE-C-06",
+      "fee_paid_drops": 5,
+      "fee_due_drops": 10,
+      "ledger_open": false,
+      "expected": "ok",
+      "rule": "closed ledger: fee sufficiency not checked"
+    },
+    {
+      "id": "FEE-C-07",
+      "fee_paid_drops": -1,
+      "fee_due_drops": 10,
+      "ledger_open": true,
+      "expected": "temBAD_FEE",
+      "rule": "negative fee is malformed"
+    },
+    {
+      "id": "FEE-C-08",
+      "fee_paid_drops": 10,
+      "fee_due_drops": 10,
+      "ledger_open": true,
+      "non_native": true,
+      "expected": "temBAD_FEE",
+      "rule": "non-native fee currency is malformed"
+    }
+  ],
+  "scale_fee_load_cases": [
+    {
+      "id": "FEE-S-01",
+      "fee_drops": 10,
+      "fee_factor": 256,
+      "expected_drops": 10,
+      "rule": "normal load (factor 256): fee unchanged"
+    },
+    {
+      "id": "FEE-S-02",
+      "fee_drops": 10,
+      "fee_factor": 512,
+      "expected_drops": 20,
+      "rule": "2x load: fee doubles"
+    },
+    {
+      "id": "FEE-S-03",
+      "fee_drops": 10,
+      "fee_factor": 320,
+      "expected_drops": 12,
+      "rule": "fee * 320 / 256 = 12.5, integer division floors to 12"
+    },
+    {
+      "id": "FEE-S-04",
+      "fee_drops": 0,
+      "fee_factor": 512,
+      "expected_drops": 0,
+      "rule": "zero fee stays zero under load scaling"
+    },
+    {
+      "id": "FEE-S-05",
+      "fee_drops": 10000,
+      "fee_factor": 256,
+      "expected_drops": 10000,
+      "rule": "10000 drops at normal load unchanged"
+    },
+    {
+      "id": "FEE-S-06",
+      "fee_drops": 10000,
+      "fee_factor": 1024,
+      "expected_drops": 40000,
+      "rule": "4x load: 10000 * 1024 / 256 = 40000"
+    }
+  ],
+  "sequence_cases": [
+    {
+      "id": "SEQ-01",
+      "account_seq": 42,
+      "tx_seq": 42,
+      "account_exists": true,
+      "expected": "ok",
+      "rule": "tx sequence equals account sequence: accepted"
+    },
+    {
+      "id": "SEQ-02",
+      "account_seq": 42,
+      "tx_seq": 43,
+      "account_exists": true,
+      "expected": "terPRE_SEQ",
+      "rule": "tx sequence ahead of account sequence (gap): retryable, not applied"
+    },
+    {
+      "id": "SEQ-03",
+      "account_seq": 42,
+      "tx_seq": 41,
+      "account_exists": true,
+      "expected": "tefPAST_SEQ",
+      "rule": "tx sequence behind account sequence (replay): failed, fee claimed"
+    },
+    {
+      "id": "SEQ-04",
+      "account_seq": 42,
+      "tx_seq": 44,
+      "account_exists": true,
+      "expected": "terPRE_SEQ",
+      "rule": "tx sequence 2 ahead (gap of 2): retryable"
+    },
+    {
+      "id": "SEQ-05",
+      "account_seq": 42,
+      "tx_seq": 42,
+      "account_exists": false,
+      "expected": "terNO_ACCOUNT",
+      "rule": "source account does not exist: retryable"
+    },
+    {
+      "id": "SEQ-06",
+      "account_seq": 1,
+      "tx_seq": 1,
+      "account_exists": true,
+      "expected": "ok",
+      "rule": "first transaction of a new account (sequence 1): accepted"
+    }
+  ],
+  "escalation_constants": [
+    {
+      "id": "FEE-E-01",
+      "base_level": 256,
+      "expected_multiplier": 128000,
+      "rule": "minimum escalation multiplier = baseLevel * 500"
+    },
+    {
+      "id": "FEE-E-02",
+      "constant": "minimumTxnInLedger",
+      "expected": 32,
+      "rule": "minimum transactions allowed into a ledger before escalation"
+    },
+    {
+      "id": "FEE-E-03",
+      "constant": "targetTxnInLedger",
+      "expected": 256,
+      "rule": "transactions per ledger that fee escalation works towards"
+    },
+    {
+      "id": "FEE-E-04",
+      "constant": "minimumTxnInLedgerSA",
+      "expected": 1000,
+      "rule": "minimum transactions per ledger in standalone mode"
+    },
+    {
+      "id": "FEE-E-05",
+      "constant": "retrySequencePercent",
+      "expected": 25,
+      "rule": "replacement transaction for the same sequence must pay at least 1.25x the queued fee level"
+    },
+    {
+      "id": "FEE-E-06",
+      "queued_fee_level": 512,
+      "expected_replacement": 640,
+      "rule": "replacement for fee level 512 must be at least 512 * 1.25 = 640"
+    }
+  ]
+}

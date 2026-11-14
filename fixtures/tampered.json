@@ -1,0 +1,65 @@
+{
+  "meta": {
+    "note": "SYNTHETIC tampered-input fixtures. Each case is an input that a correct harness must DETECT and reject. A check PASSES when the tamper is detected; the tampered input itself is expected to fail validation."
+  },
+  "threshold_tamper": {
+    "id": "TAMP-01",
+    "claimed_postfix_num": 80,
+    "claimed_postfix_den": 100,
+    "pinned_postfix_num": 67,
+    "pinned_postfix_den": 100,
+    "expected": "detected",
+    "rule": "a fixture claiming the pinned post-fix threshold is 80/100 must be flagged: pinned value is 67/100"
+  },
+  "forged_signature": {
+    "id": "TAMP-02",
+    "publisher_key": "ED_SYNTHETIC_PUBLISHER_A",
+    "blob": "{\"publisher\":\"A\",\"sequence\":8,\"validators\":[\"VAL9\",\"VAL2\",\"VAL3\"]}",
+    "signature": "3e4c9fe32c71b7dfd77c1a51f7a03763bddff70efff20e093d3d9d4e7689e4ae",
+    "expected": "rejected",
+    "rule": "validator-list entry whose signature does not match its blob must be rejected"
+  },
+  "fee_below_minimum": {
+    "id": "TAMP-03",
+    "fee_paid_drops": 5,
+    "fee_due_drops": 10,
+    "ledger_open": true,
+    "expected": "telINSUF_FEE_P",
+    "rule": "fee of 5 drops against a 10-drop due fee must be rejected as insufficient"
+  },
+  "sequence_gap": {
+    "id": "TAMP-04",
+    "account_seq": 42,
+    "tx_seq": 44,
+    "account_exists": true,
+    "expected": "terPRE_SEQ",
+    "rule": "transaction sequence 2 ahead of the account sequence (gap) must be held, not applied"
+  },
+  "sequence_replay": {
+    "id": "TAMP-05",
+    "account_seq": 42,
+    "tx_seq": 41,
+    "account_exists": true,
+    "expected": "tefPAST_SEQ",
+    "rule": "replayed transaction (sequence already used) must fail with tefPAST_SEQ"
+  },
+  "list_sequence_regression": {
+    "id": "TAMP-06",
+    "current_sequence": 7,
+    "incoming_sequence": 6,
+    "expected": "stale",
+    "rule": "validator list with a regressed sequence must be treated as stale, not applied"
+  },
+  "vote_overflow": {
+    "id": "TAMP-07",
+    "votes": 17,
+    "trusted_validators": 16,
+    "expected": "invalid",
+    "rule": "an amendment vote count larger than the trusted validator set is impossible input and must be rejected"
+  },
+  "digest_tamper": {
+    "id": "TAMP-08",
+    "expected": "detected",
+    "rule": "a fixture file with one byte changed must fail sha256sum --check against the recorded digest"
+  }
+}

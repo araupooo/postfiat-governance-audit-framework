@@ -1,0 +1,194 @@
+{
+  "meta": {
+    "note": "SYNTHETIC fixtures. Rules transcribed from src/xrpld/app/misc/detail/ValidatorList.cpp and src/xrpld/app/misc/ValidatorList.h. Publisher keys and validator IDs are invented. Signatures are synthetic sha256(publisher_key + '|' + blob) stand-ins for the ed25519 publisher-signature verification in applyList; they exercise the verify-then-apply rule, not real crypto.",
+    "signature_scheme": "sha256(publisher_key + '|' + blob) hex"
+  },
+  "list_threshold_cases": [
+    {
+      "id": "VAL-L-01",
+      "publishers": 0,
+      "expected": 1,
+      "rule": "fewer than 3 publishers: threshold 1"
+    },
+    {
+      "id": "VAL-L-02",
+      "publishers": 1,
+      "expected": 1,
+      "rule": "1 publisher: threshold 1"
+    },
+    {
+      "id": "VAL-L-03",
+      "publishers": 2,
+      "expected": 1,
+      "rule": "2 publishers: threshold 1"
+    },
+    {
+      "id": "VAL-L-04",
+      "publishers": 3,
+      "expected": 2,
+      "rule": "3 publishers: threshold 3/2+1 = 2"
+    },
+    {
+      "id": "VAL-L-05",
+      "publishers": 4,
+      "expected": 3,
+      "rule": "4 publishers: threshold 4/2+1 = 3"
+    },
+    {
+      "id": "VAL-L-06",
+      "publishers": 5,
+      "expected": 3,
+      "rule": "5 publishers: threshold 5/2+1 = 3"
+    },
+    {
+      "id": "VAL-L-07",
+      "publishers": 6,
+      "expected": 4,
+      "rule": "6 publishers: threshold 6/2+1 = 4"
+    },
+    {
+      "id": "VAL-L-08",
+      "publishers": 10,
+      "expected": 6,
+      "rule": "10 publishers: threshold 10/2+1 = 6"
+    }
+  ],
+  "quorum_cases": [
+    {
+      "id": "VAL-Q-01",
+      "unl_size": 16,
+      "effective_unl_size": 16,
+      "expected_pinned": 11,
+      "expected_upstream": 13,
+      "rule": "pinned: max(ceil(16*0.67), ceil(16*0.6)) = max(11,10) = 11; upstream 80%: max(13,10) = 13"
+    },
+    {
+      "id": "VAL-Q-02",
+      "unl_size": 10,
+      "effective_unl_size": 10,
+      "expected_pinned": 7,
+      "expected_upstream": 8,
+      "rule": "pinned: max(ceil(10*0.67), ceil(10*0.6)) = max(7,6) = 7; upstream: max(8,6) = 8"
+    },
+    {
+      "id": "VAL-Q-03",
+      "unl_size": 35,
+      "effective_unl_size": 35,
+      "expected_pinned": 24,
+      "expected_upstream": 28,
+      "rule": "pinned: max(ceil(35*0.67), ceil(35*0.6)) = max(24,21) = 24; upstream: max(28,21) = 28"
+    },
+    {
+      "id": "VAL-Q-04",
+      "unl_size": 20,
+      "effective_unl_size": 15,
+      "expected_pinned": 12,
+      "expected_upstream": 12,
+      "rule": "pinned: max(ceil(15*0.67), ceil(20*0.6)) = max(11,12) = 12; upstream: max(12,12) = 12 (60% floor dominates)"
+    },
+    {
+      "id": "VAL-Q-05",
+      "unl_size": 100,
+      "effective_unl_size": 100,
+      "expected_pinned": 67,
+      "expected_upstream": 80,
+      "rule": "pinned: max(ceil(100*0.67), ceil(100*0.6)) = 67; upstream: 80"
+    }
+  ],
+  "trusted_inclusion_cases": [
+    {
+      "id": "VAL-T-01",
+      "validator": "VAL1",
+      "listings": 3,
+      "list_threshold": 2,
+      "revoked": false,
+      "expected": true,
+      "rule": "listed on >= threshold lists and manifest not revoked: trusted"
+    },
+    {
+      "id": "VAL-T-02",
+      "validator": "VAL2",
+      "listings": 1,
+      "list_threshold": 2,
+      "revoked": false,
+      "expected": false,
+      "rule": "listed on fewer than threshold lists: not trusted"
+    },
+    {
+      "id": "VAL-T-03",
+      "validator": "VAL3",
+      "listings": 2,
+      "list_threshold": 2,
+      "revoked": true,
+      "expected": false,
+      "rule": "listed enough but manifest revoked: not trusted"
+    },
+    {
+      "id": "VAL-T-04",
+      "validator": "VAL4",
+      "listings": 5,
+      "list_threshold": 3,
+      "revoked": false,
+      "expected": true,
+      "rule": "listed on 5 of 3-required lists, not revoked: trusted"
+    },
+    {
+      "id": "VAL-T-05",
+      "validator": "VAL5",
+      "listings": 0,
+      "list_threshold": 1,
+      "revoked": false,
+      "expected": false,
+      "rule": "listed on no lists: not trusted"
+    }
+  ],
+  "signature_cases": [
+    {
+      "id": "VAL-S-01",
+      "publisher_key": "ED_SYNTHETIC_PUBLISHER_A",
+      "blob": "{\"publisher\":\"A\",\"sequence\":7,\"validators\":[\"VAL1\",\"VAL2\",\"VAL3\"]}",
+      "signature": "3e4c9fe32c71b7dfd77c1a51f7a03763bddff70efff20e093d3d9d4e7689e4ae",
+      "expected": "accepted",
+      "rule": "publisher signature verifies: list applied"
+    },
+    {
+      "id": "VAL-S-02",
+      "publisher_key": "ED_SYNTHETIC_PUBLISHER_A",
+      "blob": "{\"publisher\":\"A\",\"sequence\":8,\"validators\":[\"VAL9\",\"VAL2\",\"VAL3\"]}",
+      "signature": "3e4c9fe32c71b7dfd77c1a51f7a03763bddff70efff20e093d3d9d4e7689e4ae",
+      "expected": "rejected",
+      "rule": "signature is for a different blob (forged entry): rejected"
+    },
+    {
+      "id": "VAL-S-03",
+      "publisher_key": "ED_SYNTHETIC_PUBLISHER_B",
+      "blob": "{\"publisher\":\"B\",\"sequence\":7,\"validators\":[\"VAL1\",\"VAL2\",\"VAL4\"]}",
+      "signature": "0000000000000000000000000000000000000000000000000000000000000000",
+      "expected": "rejected",
+      "rule": "all-zero signature never verifies: rejected"
+    }
+  ],
+  "sequence_cases": [
+    {
+      "id": "VAL-QQ-01",
+      "current_sequence": 7,
+      "incoming_sequence": 6,
+      "expected": "stale",
+      "rule": "incoming sequence below current: stale, not applied"
+    },
+    {
+      "id": "VAL-QQ-02",
+      "current_sequence": 7,
+      "incoming_sequence": 7,
+      "expected": "same_sequence",
+      "rule": "incoming sequence equal to current: already known, not applied as new"
+    },
+    {
+      "id": "VAL-QQ-03",
+      "current_sequence": 7,
+      "incoming_sequence": 8,
+      "expected": "new",
+      "rule": "incoming sequence above current: new list, applied"
+    }
+  ]
+}
