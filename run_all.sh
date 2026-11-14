@@ -78,6 +78,7 @@ cp "$TMP_DIR/run_log.txt" "$RESULTS_DIR/run_log.txt"
 # checking the manifest / of the fresh-copy run, not inputs to it).
 write_manifest() {
     ( cd "$PACK_DIR" && find . -type f \
+        ! -path './.git/*' \
         ! -path './results/SHA256SUMS' \
         ! -path './results/digest_check_output.txt' \
         ! -path './results/reproduction_log.txt' \
