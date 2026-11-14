@@ -1,0 +1,36 @@
+PFTL governance audit framework — fresh-copy reproduction log
+==============================================================
+
+Commands run (from a fresh copy of the pack):
+  rm -rf /tmp/fresh-copy
+  cp -r <pack> /tmp/fresh-copy
+  cd /tmp/fresh-copy && bash run_all.sh
+
+Exit status: 0
+
+Fresh-copy run output (captured verbatim):
+  check_amendment_threshold: ok
+  check_validator_list: ok
+  check_fee_sequence: ok
+  check_tampered: ok
+  build_derived: wrote docs/index.html and claim-evidence-index.md (22 measured, 20 source-derived claims; 101 passed, 0 failed)
+  build_derived: wrote docs/index.html and claim-evidence-index.md (22 measured, 20 source-derived claims; 101 passed, 0 failed)
+  checks: 101 passed, 0 failed
+  digests: 19 files OK
+  fixed point: stable
+
+Result: 101 checks passed, 0 failed. All 19 digested files verified OK.
+The derived files (docs/index.html, claim-evidence-index.md) reached a
+stable fixed point.
+
+Byte comparison: `diff -r <pack> /tmp/fresh-copy` reported no differences —
+every file produced by the fresh-copy run is byte-identical to the pack,
+so a fresh clone reproduces the exact shipped results.
+
+Limitations:
+- Reproduction was on the same machine (same OS, Python 3.12.3, bash 5.2.21,
+  coreutils 9.4); cross-machine reproduction was not tested.
+- The harness checks rules transcribed from cited source lines against
+  synthetic fixtures; it does not compile or execute postfiatd.
+- Publisher-list signatures in the fixtures are synthetic sha256 stand-ins,
+  not real ed25519 signatures.
